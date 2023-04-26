@@ -1,0 +1,22 @@
+{
+  "name": "doccheck",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^10.0.1",
+    "csv": "^6.2.10",
+    "csv-stringify": "^6.3.2",
+    "got": "^12.6.0",
+    "js-yaml": "^4.1.0",
+    "pino": "^8.11.0",
+    "pino-pretty": "^10.0.0"
+  }
+}
