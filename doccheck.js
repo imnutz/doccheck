@@ -24,7 +24,7 @@ program
   .requiredOption('-p, --path <yaml dir>')
   .option('-i, --info', 'Doc paths and doc links report')
   .option('-c, --by-category', 'Report by catalog and categories')
-  .option('-e, --export <csv name>', 'Export to csv file', 'default');
+  .requiredOption('-e, --export <csv name>', 'Export to csv file');
 
 program.parse();
 
