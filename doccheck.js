@@ -22,7 +22,9 @@ const logger = pino({
 
 program
   .requiredOption('-p, --path <yaml dir>')
-  .option('--csv <name of csv file>');
+  .option('-i, --info', 'Doc paths and doc links report')
+  .option('-c, --by-category', 'Report by catalog and categories')
+  .option('-e, --export <csv name>', 'Export to csv file', 'default');
 
 program.parse();
 
@@ -35,6 +37,7 @@ if (!allYaml || !allYaml.length) {
 }
 
 const docInfo = new Map();
+const byCatalogAndCategory = new Map();
 
 logger.info('Parsing yaml files...');
 
@@ -58,50 +61,78 @@ allYaml.forEach((ymlFile) => {
     }
 
     docInfo.set(path.basename(filePath), docPaths);
+
+    byCatalogAndCategory.set(ymlDoc.name, ymlDoc.categories);
   } catch (e) {
     logger.error(e);
   }
 });
 
-const csvFileName = (options.csv || 'info') + '.csv';
-const csvFilePath = path.resolve('./' + csvFileName);
-const writableStream = fs.createWriteStream(csvFilePath);
+let csvFileName;
+let csvFilePath;
+let writableStream;
 
-const columns = [
-  "Catalog",
-  "Doc path",
-  "Redirect",
-  "Wrong/Default"
-];
+if (options.byCategory) {
+  csvFileName = options.export + '.csv';
+  csvFilePath = path.resolve('./' + csvFileName);
+  writableStream = fs.createWriteStream(csvFilePath);
+  const columns = [
+    "Catalog",
+    "Categories"
+  ];
+  const stringifier = stringify({ header: true, columns: columns });
+  stringifier.pipe(writableStream);
 
-const stringifier = stringify({ header: true, columns: columns });
-stringifier.pipe(writableStream);
-
-for (const [key, value] of docInfo) {
-  value.forEach( async (url) => {
+  for (const [key, categories] of byCatalogAndCategory) {
     try {
-      const response = await got.get(GOTD + url, { followRedirect: false });
-      const location = response.headers.location;
-
-      const data = [
-        key,
-        url,
-        location
-      ];
-
-      if (/^(http|https):\/\/www\.treasuredata/i.test(location)) {
-        data.push('yes');
-      } else if (/^(http|https):\/\/docs\.treasuredata/i.test(location)) {
-        data.push('no');
-      }
-
+      const data = [key, categories.join('\n')];
       stringifier.write(data);
-    } catch (e) {
-      const errorInfo = [
-        key, url, '', e.message
-      ];
-      stringifier.write(errorInfo);
+    } catch( e ) {
+      logger.error(e.message);
     }
-  });
+  }
+
+} else if (options.info){
+  csvFileName = options.export + '.csv';
+  csvFilePath = path.resolve('./' + csvFileName);
+  writableStream = fs.createWriteStream(csvFilePath);
+
+  const columns = [
+    "Catalog",
+    "Doc path",
+    "Redirect",
+    "Wrong/Default"
+  ];
+
+  const stringifier = stringify({ header: true, columns: columns });
+  stringifier.pipe(writableStream);
+
+  for (const [key, value] of docInfo) {
+    value.forEach( async (url) => {
+      try {
+        const response = await got.get(GOTD + url, { followRedirect: false });
+        const location = response.headers.location;
+
+        const data = [
+          key,
+          url,
+          location
+        ];
+
+        if (/^(http|https):\/\/www\.treasuredata/i.test(location)) {
+          data.push('yes');
+        } else if (/^(http|https):\/\/docs\.treasuredata/i.test(location)) {
+          data.push('no');
+        }
+
+        stringifier.write(data);
+      } catch (e) {
+        const errorInfo = [
+          key, url, '', e.message
+        ];
+        stringifier.write(errorInfo);
+      }
+    });
+  }
 }
 

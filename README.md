@@ -7,5 +7,11 @@ npm install
 ```
 
 ```bash
-./doccheck.js -p <path_to_catalog_folder> --csv <optional: the csv file name>
+./doccheck.js <options>
+
+Options:
+  -p Catalog directory path
+  -i, --info Report doc paths and doc links
+  -c, --by-category Report catalog and categories
+  -e, --export <csv file name> Export to csv file
 ```
